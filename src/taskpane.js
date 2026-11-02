@@ -3,7 +3,9 @@
   'use strict';
 
   var M = window.VoiceDrift;
-  var hasOffice = typeof Office !== 'undefined';
+  // True only when the pane is running inside Word. Office.js also loads in a normal
+  // browser, so this is set from Office.onReady's host, not from Office existing.
+  var inWord = false;
   var state = { metric: 'sentenceLength', paras: [], rows: [], orig: [], profile: null };
 
   // Plain-language help for each measure. ends[0] is the low side, ends[1] the high side.
@@ -38,8 +40,25 @@
     return M.METRICS.filter(function (m) { return m.key === key; })[0];
   }
 
+  // Each non-empty line is a paragraph, matching how Word counts paragraphs.
   function paragraphsFrom(text) {
-    return text.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    return text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  // On the website, a paragraph number selects that paragraph in the text box.
+  function selectInBox(index) {
+    var box = $('source'), text = box.value, paras = paragraphsFrom(text), pos = 0;
+    for (var i = 0; i < paras.length; i++) {
+      var at = text.indexOf(paras[i], pos);
+      if (at < 0) return;
+      if (i === index) {
+        box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        box.focus();
+        box.setSelectionRange(at, at + paras[i].length);
+        return;
+      }
+      pos = at + paras[i].length;
+    }
   }
 
   function setStatus(msg) { $('status').textContent = msg; }
@@ -64,8 +83,8 @@
   }
 
   async function jump(index) {
-    if (!hasOffice) {
-      setStatus('Jumping to paragraph ' + (index + 1) + ' works inside Word.');
+    if (!inWord) {
+      selectInBox(index);
       return;
     }
     try {
@@ -84,11 +103,11 @@
   // ---------- Data flow ----------
 
   async function refresh() {
-    setStatus('Reading document...');
+    if (inWord) setStatus('Reading document...');
     try {
-      state.paras = hasOffice ? await readDocument() : DEMO_DOC;
+      state.paras = inWord ? await readDocument() : paragraphsFrom($('source').value);
       recompute();
-      setStatus(state.rows.length + ' paragraphs measured' + (hasOffice ? '' : ' (demo text)'));
+      setStatus(state.rows.length + ' paragraphs measured');
     } catch (err) {
       setStatus('Could not read the document: ' + err.message);
     }
@@ -247,16 +266,43 @@
       var t = e.target && e.target.closest ? e.target.closest('[data-jump]') : null;
       if (t) jump(Number(t.getAttribute('data-jump')));
     });
-    if (!hasOffice) {
-      $('target').value = DEMO_TARGET;
-      $('orig').value = DEMO_ORIGINAL;
-    }
+    if (!inWord) setUpWebMode();
     refresh();
   }
 
-  if (hasOffice) {
-    Office.onReady(init);
-  } else {
+  // Outside Word: show the text box, hide "Read document", and update as the user types.
+  function loadSample() {
+    $('source').value = DEMO_DOC.join('\n\n');
+    $('target').value = DEMO_TARGET;
+    $('orig').value = DEMO_ORIGINAL;
+  }
+
+  function setUpWebMode() {
+    $('source-card').hidden = false;
+    $('refresh').hidden = true;
+    $('source').addEventListener('input', debounce(refresh, 250));
+    $('load-sample').addEventListener('click', function () { loadSample(); refresh(); });
+    $('clear-source').addEventListener('click', function () {
+      $('source').value = '';
+      refresh();
+      $('source').focus();
+    });
+    loadSample();
+  }
+
+  var started = false;
+  function start(info) {
+    if (started) return;
+    started = true;
+    inWord = !!(info && typeof Office !== 'undefined' && info.host === Office.HostType.Word);
     init();
+  }
+
+  if (typeof Office !== 'undefined' && Office.onReady) {
+    Office.onReady(start);
+    // If Office.js never reports ready (blocked or offline), fall back to the website mode.
+    setTimeout(function () { start(null); }, 3000);
+  } else {
+    start(null);
   }
 })();

@@ -17,6 +17,15 @@
   </header>
 
   <main>
+    <section id="source-card" class="card" hidden>
+      <div class="card-title">Your text</div>
+      <textarea id="source" rows="10" aria-label="Your text" placeholder="Paste your writing here. Put each paragraph on its own line."></textarea>
+      <div class="row-actions">
+        <button id="load-sample" class="btn" type="button">Load sample</button>
+        <button id="clear-source" class="btn" type="button">Clear</button>
+      </div>
+    </section>
+
     <section class="card">
       <div class="card-title">What to measure</div>
       <div id="metrics" class="segmented" role="group" aria-label="Measure"></div>
@@ -35,7 +44,7 @@
       <details class="help">
         <summary>How to read this</summary>
         <ul>
-          <li>Each row is one paragraph, numbered as in your document. Click a number to jump to it in Word.</li>
+          <li>Each row is one paragraph, numbered as in your document. Click a number to jump to that paragraph.</li>
           <li>The shaded bar is your target range, built from the sample you paste under "Target style and original draft".</li>
           <li>A dot inside the bar matches your target. A dot outside it is a paragraph that drifts from the target.</li>
         </ul>

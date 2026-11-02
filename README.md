@@ -2,7 +2,7 @@
 
 A Microsoft Word add-in that shows where your writing changes voice. Each paragraph is compared with a target style you choose, so you can see which parts drift.
 
-Live page (opens with sample text): https://owenwalshhh.github.io/voice-drift-tracker/taskpane.html
+Try it in your browser, no Word needed: https://owenwalshhh.github.io/voice-drift-tracker/taskpane.html. Paste your writing into the **Your text** box, one paragraph per line, and the results update as you type.
 
 ## Install in Word (no setup needed)
 
