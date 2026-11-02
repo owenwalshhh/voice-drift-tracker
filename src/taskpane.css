@@ -1,0 +1,311 @@
+/* Styled to sit inside Word's task pane: Segoe UI, Office blue, flat cards, 1px borders. */
+:root {
+  --accent: #0f6cbd;
+  --accent-hover: #115ea3;
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --text: #242424;
+  --muted: #616161;
+  --border: #d1d1d1;
+  --in: #107c10;
+  --near: #bc8a00;
+  --out: #c50f1f;
+  --none: #a6a6a6;
+  --line: #0f6cbd;
+  --orig: #8a8886;
+  --band: rgba(16, 124, 16, 0.14);
+  --seg-hover: #ebebeb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #479ef5;
+    --accent-hover: #62abf5;
+    --bg: #1f1f1f;
+    --card: #292929;
+    --text: #f5f5f5;
+    --muted: #adadad;
+    --border: #3d3d3d;
+    --in: #6ccb5f;
+    --near: #fce100;
+    --out: #ff99a4;
+    --none: #6e6e6e;
+    --line: #479ef5;
+    --orig: #9e9e9e;
+    --band: rgba(108, 203, 95, 0.18);
+    --seg-hover: #333333;
+  }
+}
+
+:root[data-theme="dark"] {
+  --accent: #479ef5;
+  --accent-hover: #62abf5;
+  --bg: #1f1f1f;
+  --card: #292929;
+  --text: #f5f5f5;
+  --muted: #adadad;
+  --border: #3d3d3d;
+  --in: #6ccb5f;
+  --near: #fce100;
+  --out: #ff99a4;
+  --none: #6e6e6e;
+  --line: #479ef5;
+  --orig: #9e9e9e;
+  --band: rgba(108, 203, 95, 0.18);
+  --seg-hover: #333333;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 0 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.45 "Segoe UI", "Segoe UI Variable", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sub, .hint, .muted, .summary, .status, .empty {
+  color: var(--muted);
+}
+
+.sub { margin: 2px 0 0; font-size: 12px; }
+
+main { padding: 12px 12px 0; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.card-title .muted {
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover { background: var(--seg-hover); }
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn.primary:hover { background: var(--accent-hover); }
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.seg {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.seg:hover { background: var(--seg-hover); }
+
+.seg[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 -2px 0 var(--accent);
+  font-weight: 600;
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 9px; font-family: inherit; }
+.chart .band { fill: var(--band); }
+.chart .line { fill: none; stroke: var(--line); stroke-width: 2; stroke-linejoin: round; }
+.chart .orig { fill: none; stroke: var(--orig); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.chart .orig-pt { fill: var(--card); stroke: var(--orig); stroke-width: 1.5; }
+.chart .pt { fill: var(--line); stroke: var(--card); stroke-width: 1.5; cursor: pointer; }
+.chart .pt:hover { r: 5; }
+
+.legend, .key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.legend span, .key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+[hidden] { display: none !important; }
+
+.sw {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  background: var(--line);
+}
+
+.sw.dashed {
+  background: none;
+  border-top: 2px dashed var(--orig);
+}
+
+.sw.band {
+  height: 9px;
+  width: 14px;
+  background: var(--band);
+  border: 1px solid var(--in);
+  border-radius: 1px;
+}
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cell {
+  flex: 1 1 36px;
+  min-width: 30px;
+  height: 34px;
+  border: none;
+  border-radius: 2px;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--none);
+  opacity: 0.9;
+}
+
+.cell:hover { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; }
+.cell.in { background: var(--in); }
+.cell.near { background: var(--near); color: #242424; }
+.cell.out { background: var(--out); color: #242424; }
+
+:root[data-theme="dark"] .cell.in,
+:root[data-theme="dark"] .cell { color: #111; }
+
+.cell-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--none);
+}
+.cell-key.in { background: var(--in); }
+.cell-key.near { background: var(--near); }
+.cell-key.out { background: var(--out); }
+
+.summary {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+.empty { font-size: 12px; margin: 0; }
+
+details.card summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+
+.field {
+  display: block;
+  margin-top: 10px;
+}
+
+.field span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--card);
+  color: var(--text);
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.status {
+  padding: 8px 16px;
+  font-size: 11px;
+  min-height: 1em;
+}
+
+@media (max-width: 360px) {
+  .app-header { flex-direction: column; align-items: flex-start; }
+}
