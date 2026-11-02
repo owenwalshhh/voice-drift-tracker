@@ -5,22 +5,22 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>6f1c2b8e-3a4d-4e7b-9c1a-2d5e8f0b7a13</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.1.0.0</Version>
   <ProviderName>Owen</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Voice Drift Tracker"/>
-  <Description DefaultValue="Charts how your writing voice shifts from paragraph to paragraph against a target style."/>
-  <IconUrl DefaultValue="https://localhost:3000/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/icon-80.png"/>
-  <SupportUrl DefaultValue="https://localhost:3000/"/>
+  <Description DefaultValue="Shows where your writing changes voice, paragraph by paragraph, against a target style."/>
+  <IconUrl DefaultValue="https://owenwalshhh.github.io/voice-drift-tracker/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://owenwalshhh.github.io/voice-drift-tracker/icon-80.png"/>
+  <SupportUrl DefaultValue="https://github.com/owenwalshhh/voice-drift-tracker"/>
   <AppDomains>
-    <AppDomain>https://localhost:3000</AppDomain>
+    <AppDomain>https://owenwalshhh.github.io</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/>
+    <SourceLocation DefaultValue="https://owenwalshhh.github.io/voice-drift-tracker/taskpane.html"/>
   </DefaultSettings>
   <Permissions>ReadDocument</Permissions>
 </OfficeApp>

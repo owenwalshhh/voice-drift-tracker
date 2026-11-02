@@ -1,8 +1,8 @@
 {
   "name": "voice-drift-tracker",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Microsoft Word task pane that charts how your writing voice drifts across a document.",
+  "description": "Microsoft Word task pane that shows where your writing changes voice, paragraph by paragraph.",
   "scripts": {
     "test": "node --test \"test/*.test.js\""
   },

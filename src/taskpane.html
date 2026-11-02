@@ -11,48 +11,56 @@
   <header class="app-header">
     <div>
       <h1>Voice Drift</h1>
-      <p class="sub">How your voice shifts across the document</p>
+      <p class="sub">See where your writing changes voice</p>
     </div>
     <button id="refresh" class="btn primary" type="button">Read document</button>
   </header>
 
   <main>
     <section class="card">
-      <div class="card-title">Measure</div>
-      <div id="metrics" class="segmented" role="group" aria-label="Metric"></div>
+      <div class="card-title">What to measure</div>
+      <div id="metrics" class="segmented" role="group" aria-label="Measure"></div>
       <p id="metric-hint" class="hint"></p>
     </section>
 
     <section class="card">
-      <div class="card-title">Drift across the document</div>
-      <div id="chart"></div>
+      <div class="card-title">Paragraph by paragraph</div>
+      <div id="drift" class="drift"></div>
       <div class="legend">
-        <span><i class="sw line"></i>Rewrite</span>
-        <span id="legend-orig" hidden><i class="sw dashed"></i>Original</span>
-        <span><i class="sw band"></i>Target band</span>
+        <span><i class="sw band"></i>Your target range</span>
+        <span><i class="sw dot-key"></i>Paragraph (green in range, red drifted)</span>
+        <span id="legend-orig" hidden><i class="sw dot-key orig"></i>Original draft</span>
       </div>
+      <p id="summary" class="summary"></p>
+      <details class="help">
+        <summary>How to read this</summary>
+        <ul>
+          <li>Each row is one paragraph, numbered as in your document. Click a number to jump to it in Word.</li>
+          <li>The shaded bar is your target range, built from the sample you paste under "Target style and original draft".</li>
+          <li>A dot inside the bar matches your target. A dot outside it is a paragraph that drifts from the target.</li>
+        </ul>
+      </details>
     </section>
 
     <section class="card">
-      <div class="card-title">Paragraphs <span class="muted">click to jump</span></div>
+      <div class="card-title">Quick view</div>
       <div id="strip" class="strip"></div>
       <div class="key">
-        <span><i class="cell-key in"></i>In band</span>
-        <span><i class="cell-key near"></i>Near</span>
+        <span><i class="cell-key in"></i>In range</span>
+        <span><i class="cell-key near"></i>Near edge</span>
         <span><i class="cell-key out"></i>Drifted</span>
       </div>
-      <p id="summary" class="summary"></p>
     </section>
 
     <details class="card">
-      <summary>Target and original</summary>
+      <summary>Target style and original draft</summary>
       <label class="field">
         <span>Target style sample</span>
-        <textarea id="target" rows="5" placeholder="Paste a passage in the style you are aiming for."></textarea>
+        <textarea id="target" rows="5" placeholder="Paste a passage in the style you are aiming for. The shaded target range is built from it."></textarea>
       </label>
       <label class="field">
         <span>Original draft (optional)</span>
-        <textarea id="orig" rows="4" placeholder="Paste the draft from before the rewrite to overlay it."></textarea>
+        <textarea id="orig" rows="4" placeholder="Paste the draft from before your rewrite to compare it on the same rows."></textarea>
       </label>
     </details>
   </main>

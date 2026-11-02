@@ -6,6 +6,15 @@
   var hasOffice = typeof Office !== 'undefined';
   var state = { metric: 'sentenceLength', paras: [], rows: [], orig: [], profile: null };
 
+  // Plain-language help for each measure. ends[0] is the low side, ends[1] the high side.
+  var HELP = {
+    sentenceLength: { text: 'Average words per sentence.', ends: ['Shorter sentences', 'Longer sentences'] },
+    wordLength: { text: 'Average letters per word. Longer words usually sound more formal.', ends: ['Simpler words', 'Longer words'] },
+    hedging: { text: 'How often you use words like "might", "perhaps", and "seems". More hedging sounds more tentative.', ends: ['More certain', 'More tentative'] },
+    personal: { text: 'How often you use I, we, and you compared with he, she, and they. Higher means more personal.', ends: ['Impersonal', 'Personal'] },
+    punctuation: { text: 'How often you use question marks, exclamation points, and dashes. Higher means more expressive.', ends: ['Plain', 'Expressive'] }
+  };
+
   // Used only when the page runs outside Word (for previewing the layout).
   var DEMO_DOC = [
     "Okay, so here's the thing. Most people think budgeting is boring. I did too, honestly, until I saw my bank statement.",
@@ -114,81 +123,90 @@
 
   function renderMetricButtons() {
     Array.prototype.forEach.call($('metrics').children, function (b) {
-      var on = b.getAttribute('data-key') === state.metric;
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.setAttribute('aria-pressed', b.getAttribute('data-key') === state.metric ? 'true' : 'false');
     });
   }
 
-  function path(list, key, x, y) {
-    var d = '', pen = false;
-    list.forEach(function (r, i) {
-      var v = r[key];
-      if (v == null) { pen = false; return; }
-      d += (pen ? ' L' : ' M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1);
-      pen = true;
-    });
-    return d.trim();
+  // Words, not numbers, describe where a paragraph sits relative to the target.
+  function describe(cls, value, prof) {
+    if (!prof) return 'No target set yet';
+    var high = value > prof.mean;
+    if (cls === 'in') return 'In your target range';
+    if (cls === 'near') return high ? 'Slightly above target' : 'Slightly below target';
+    return high ? 'Well above target' : 'Well below target';
   }
 
-  function chartSVG() {
-    var key = state.metric, rows = state.rows, orig = state.orig;
-    var prof = state.profile && state.profile[key];
-    if (!rows.length) return '<p class="empty">Nothing to measure yet. Write a few paragraphs, then read the document.</p>';
+  function renderDrift() {
+    var key = state.metric, prof = state.profile && state.profile[key];
+    var rows = state.rows, orig = state.orig;
+    var el = $('drift'), summary = $('summary');
+
+    if (!rows.length) {
+      el.innerHTML = '<p class="empty">Read the document to see each paragraph here.</p>';
+      summary.textContent = '';
+      return;
+    }
 
     var vals = [];
-    rows.concat(orig).forEach(function (r) { if (r[key] != null) vals.push(r[key]); });
-    if (!vals.length) return '<p class="empty">No measurable words for this metric yet.</p>';
+    rows.forEach(function (r) { if (r[key] != null) vals.push(r[key]); });
+    orig.forEach(function (r) { if (r[key] != null) vals.push(r[key]); });
+    if (!vals.length) {
+      el.innerHTML = '<p class="empty">No measurable words for this measure yet.</p>';
+      summary.textContent = '';
+      return;
+    }
 
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     if (prof) {
       lo = Math.min(lo, prof.mean - prof.half);
       hi = Math.max(hi, prof.mean + prof.half);
     }
-    // Every metric is zero or above, so the axis never goes negative.
     var span = (hi - lo) || 1;
-    lo = Math.max(0, lo - span * 0.12);
-    hi += span * 0.12;
+    lo = Math.max(0, lo - span * 0.08);
+    hi = hi + span * 0.08;
+    var range = hi - lo;
+    function pos(v) { return ((v - lo) / range * 100).toFixed(2) + '%'; }
 
-    var W = 300, H = 160, L = 36, R = 12, T = 10, B = 22;
-    var n = Math.max(rows.length, orig.length);
-    var x = function (i) { return n <= 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (n - 1); };
-    var y = function (v) { return T + (1 - (v - lo) / (hi - lo)) * (H - T - B); };
+    var outCount = 0, nearCount = 0;
+    var html = rows.map(function (r, i) {
+      var v = r[key];
+      var label = '<button type="button" class="drift-label" data-jump="' + r.index +
+        '" aria-label="Go to paragraph ' + (r.index + 1) + '">' + (r.index + 1) + '</button>';
 
-    var out = [];
-    out.push('<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
-      metricDef(key).label + ' across paragraphs">');
+      if (v == null) {
+        return '<div class="drift-row">' + label +
+          '<div class="drift-body"><div class="track"></div><div class="drift-note">No words to measure here</div></div></div>';
+      }
 
-    for (var k = 0; k <= 2; k++) {
-      var t = lo + k * (hi - lo) / 2;
-      out.push('<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '"/>');
-      out.push('<text class="axis" x="' + (L - 6) + '" y="' + (y(t) + 3).toFixed(1) + '" text-anchor="end">' + t.toFixed(1) + '</text>');
+      var cls = M.classify(v, prof);
+      if (cls === 'out') outCount++;
+      if (cls === 'near') nearCount++;
+
+      var o = orig[i] ? orig[i][key] : null;
+      var band = prof ? '<span class="target" style="left:' + pos(prof.mean - prof.half) +
+        ';width:' + ((2 * prof.half) / range * 100).toFixed(2) + '%"></span>' : '';
+      var origDot = o != null ? '<span class="dot orig-dot" style="left:' + pos(o) +
+        '" title="Original draft, paragraph ' + (i + 1) + '"></span>' : '';
+      var dot = '<span class="dot ' + cls + '" style="left:' + pos(v) +
+        '" title="Paragraph ' + (r.index + 1) + '"></span>';
+
+      return '<div class="drift-row">' + label +
+        '<div class="drift-body"><div class="track">' + band + origDot + dot + '</div>' +
+        '<div class="drift-note">' + describe(cls, v, prof) + '</div></div></div>';
+    }).join('');
+
+    html += '<div class="scale"><span>' + HELP[key].ends[0] + '</span><span>' + HELP[key].ends[1] + '</span></div>';
+    el.innerHTML = html;
+
+    if (!prof) {
+      summary.textContent = 'Paste a target style sample to see which paragraphs match it.';
+    } else if (outCount === 0 && nearCount === 0) {
+      summary.textContent = 'Every paragraph sits inside your target range on this measure.';
+    } else {
+      summary.textContent = outCount + ' of ' + rows.length + ' paragraphs are well outside your target range' +
+        (nearCount ? ', and ' + nearCount + (nearCount === 1 ? ' is' : ' are') + ' close to its edge.' : '.') +
+        ' Those are the places to revisit.';
     }
-
-    if (prof) {
-      var top = y(prof.mean + prof.half), bottom = y(prof.mean - prof.half);
-      out.push('<rect class="band" x="' + L + '" y="' + top.toFixed(1) + '" width="' + (W - L - R) +
-        '" height="' + Math.max(0, bottom - top).toFixed(1) + '"/>');
-    }
-
-    if (orig.length) {
-      out.push('<path class="orig" d="' + path(orig, key, x, y) + '"/>');
-      orig.forEach(function (r, i) {
-        if (r[key] == null) return;
-        out.push('<circle class="orig-pt" cx="' + x(i).toFixed(1) + '" cy="' + y(r[key]).toFixed(1) +
-          '" r="2.5"><title>Original, paragraph ' + (i + 1) + ': ' + r[key].toFixed(1) + '</title></circle>');
-      });
-    }
-    out.push('<path class="line" d="' + path(rows, key, x, y) + '"/>');
-
-    rows.forEach(function (r, i) {
-      if (r[key] == null) return;
-      out.push('<circle class="pt" data-jump="' + r.index + '" cx="' + x(i).toFixed(1) +
-        '" cy="' + y(r[key]).toFixed(1) + '" r="3.5"><title>Paragraph ' + (r.index + 1) + ': ' +
-        r[key].toFixed(1) + '</title></circle>');
-    });
-
-    out.push('</svg>');
-    return out.join('');
   }
 
   function renderStrip() {
@@ -200,37 +218,21 @@
     }
     el.innerHTML = state.rows.map(function (r) {
       var cls = M.classify(r[key], prof);
-      var v = r[key] == null ? 'no value' : r[key].toFixed(1);
+      var word = cls === 'in' ? 'in range' : cls === 'near' ? 'near edge' : cls === 'out' ? 'drifted' : 'no words';
       return '<button type="button" class="cell ' + cls + '" data-jump="' + r.index +
-        '" title="Paragraph ' + (r.index + 1) + ': ' + v + '" aria-label="Paragraph ' +
-        (r.index + 1) + ', ' + v + '">' + (r.index + 1) + '</button>';
+        '" title="Paragraph ' + (r.index + 1) + ': ' + word + '" aria-label="Paragraph ' +
+        (r.index + 1) + ', ' + word + '">' + (r.index + 1) + '</button>';
     }).join('');
   }
 
-  function renderSummary() {
-    var key = state.metric, prof = state.profile && state.profile[key];
-    var el = $('summary');
-    if (!prof) {
-      el.textContent = 'Paste a target sample to see which paragraphs drift from it.';
-      return;
-    }
-    var out = 0, near = 0;
-    state.rows.forEach(function (r) {
-      var c = M.classify(r[key], prof);
-      if (c === 'out') out++;
-      if (c === 'near') near++;
-    });
-    el.textContent = out + ' of ' + state.rows.length + ' paragraphs drift outside the target band; ' +
-      near + ' sit near its edge.';
-  }
-
   function render() {
+    var key = state.metric;
+    var prof = state.profile && state.profile[key];
     renderMetricButtons();
-    $('chart').innerHTML = chartSVG();
+    $('metric-hint').textContent = HELP[key].text +
+      (prof ? '' : ' Paste a target style sample to add the shaded target range.');
+    renderDrift();
     renderStrip();
-    renderSummary();
-    var def = metricDef(state.metric);
-    $('metric-hint').textContent = def.unit + (state.profile ? '' : '. Add a target sample to see the band.');
     $('legend-orig').hidden = !state.orig.length;
   }
 
