@@ -13,11 +13,11 @@ You need desktop Word (Microsoft 365 for Windows or Mac).
 3. **Windows:** Insert > Get Add-ins > My Add-ins > Upload My Add-in, then choose `manifest.xml`.
    **Mac:** Insert > Add-ins > My Add-ins > Upload My Add-in, then choose `manifest.xml`.
    If Mac Word doesn't show Upload My Add-in, quit Word, then copy `manifest.xml` into `~/Library/Containers/com.microsoft.Word/Data/Documents/wef/` (create the folder if it's missing) and reopen Word.
-4. Click **Voice Drift** in the Home tab (or under My Add-ins) to open the pane.
+4. To open the pane, go to **Insert > My Add-ins** (on Windows, **Insert > Get Add-ins > My Add-ins**) and click **Voice Drift Tracker**.
 
 ## Use it
 
-1. Write or paste your document in Word. Put a blank line between paragraphs.
+1. Write or paste your document in Word.
 2. Click **Read document**.
 3. Under **Target style and original draft**, paste a passage in the style you want. The shaded bar in each row is built from it.
 4. Pick a measure, such as sentence length or hedging. Each row is one paragraph. A dot outside the shaded bar is a paragraph that drifts from the target.

@@ -35,7 +35,10 @@
   function sentences(text) {
     return text
       .replace(/\b(Mr|Mrs|Ms|Dr|St|vs|etc)\./g, '$1\u0000')
-      .split(/(?<=[.!?])\s+/)
+      // Mark sentence ends, then split. Avoids regex lookbehind, which older Safari
+      // (and so Word on older macOS) cannot parse.
+      .replace(/([.!?])\s+/g, '$1\u0001')
+      .split('\u0001')
       .map(function (s) { return s.replace(/\u0000/g, '.').trim(); })
       .filter(function (s) { return /[A-Za-z0-9]/.test(s); });
   }

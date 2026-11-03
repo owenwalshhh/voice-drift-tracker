@@ -9,13 +9,17 @@
   var state = { metric: 'sentenceLength', paras: [], rows: [], orig: [], profile: null };
 
   // Plain-language help for each measure. ends[0] is the low side, ends[1] the high side.
+  // empty is shown on a row the measure can't score.
   var HELP = {
-    sentenceLength: { text: 'Average words per sentence.', ends: ['Shorter sentences', 'Longer sentences'] },
-    wordLength: { text: 'Average letters per word. Longer words usually sound more formal.', ends: ['Simpler words', 'Longer words'] },
-    hedging: { text: 'How often you use words like "might", "perhaps", and "seems". More hedging sounds more tentative.', ends: ['More certain', 'More tentative'] },
-    personal: { text: 'How often you use I, we, and you compared with he, she, and they. Higher means more personal.', ends: ['Impersonal', 'Personal'] },
-    punctuation: { text: 'How often you use question marks, exclamation points, and dashes. Higher means more expressive.', ends: ['Plain', 'Expressive'] }
+    sentenceLength: { text: 'Average words per sentence.', ends: ['Shorter sentences', 'Longer sentences'], empty: 'No sentences to measure here' },
+    wordLength: { text: 'Average letters per word. Longer words usually sound more formal.', ends: ['Simpler words', 'Longer words'], empty: 'No words to measure here' },
+    hedging: { text: 'How often you use words like "might", "perhaps", and "seems". More hedging sounds more tentative.', ends: ['More certain', 'More tentative'], empty: 'No words to measure here' },
+    personal: { text: 'How often you use I, we, and you compared with he, she, and they. Higher means more personal.', ends: ['Impersonal', 'Personal'], empty: 'No I, you, he, she, or they here to compare' },
+    punctuation: { text: 'How often you use question marks, exclamation points, and dashes. Higher means more expressive.', ends: ['Plain', 'Expressive'], empty: 'No words to measure here' }
   };
+
+  // Highest possible value for measures that are percentages of something.
+  var MAX_VALUE = { personal: 100 };
 
   // Used only when the page runs outside Word (for previewing the layout).
   var DEMO_DOC = [
@@ -175,16 +179,24 @@
       return;
     }
 
+    // The target band is clamped to values the measure can actually take (never below 0,
+    // and never above 100 for percentages), so it always fits on the track.
+    var maxVal = MAX_VALUE[key] != null ? MAX_VALUE[key] : Infinity;
+    var bandLo = prof ? Math.max(0, prof.mean - prof.half) : null;
+    var bandHi = prof ? Math.min(maxVal, prof.mean + prof.half) : null;
+
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     if (prof) {
-      lo = Math.min(lo, prof.mean - prof.half);
-      hi = Math.max(hi, prof.mean + prof.half);
+      lo = Math.min(lo, bandLo);
+      hi = Math.max(hi, bandHi);
     }
     var span = (hi - lo) || 1;
     lo = Math.max(0, lo - span * 0.08);
-    hi = hi + span * 0.08;
-    var range = hi - lo;
-    function pos(v) { return ((v - lo) / range * 100).toFixed(2) + '%'; }
+    hi = Math.min(maxVal, hi + span * 0.08);
+    var range = (hi - lo) || 1;
+    function frac(v) { return Math.min(1, Math.max(0, (v - lo) / range)); }
+    // Dots are 14px wide, so positions are inset 7px from each end of the track.
+    function pos(v) { return 'calc(7px + (100% - 14px) * ' + frac(v).toFixed(4) + ')'; }
 
     var outCount = 0, nearCount = 0;
     var html = rows.map(function (r, i) {
@@ -194,7 +206,7 @@
 
       if (v == null) {
         return '<div class="drift-row">' + label +
-          '<div class="drift-body"><div class="track"></div><div class="drift-note">No words to measure here</div></div></div>';
+          '<div class="drift-body"><div class="track"></div><div class="drift-note">' + HELP[key].empty + '</div></div></div>';
       }
 
       var cls = M.classify(v, prof);
@@ -202,8 +214,18 @@
       if (cls === 'near') nearCount++;
 
       var o = orig[i] ? orig[i][key] : null;
-      var band = prof ? '<span class="target" style="left:' + pos(prof.mean - prof.half) +
-        ';width:' + ((2 * prof.half) / range * 100).toFixed(2) + '%"></span>' : '';
+      var band = '';
+      if (prof) {
+        // Keep very narrow ranges visible: widen to at least 5% of the track, staying inside it.
+        var a = frac(bandLo), z = frac(bandHi), MIN = 0.05;
+        if (z - a < MIN) {
+          var mid = (a + z) / 2;
+          a = Math.min(Math.max(0, mid - MIN / 2), 1 - MIN);
+          z = a + MIN;
+        }
+        band = '<span class="target" style="left:calc(7px + (100% - 14px) * ' + a.toFixed(4) +
+          ');width:calc((100% - 14px) * ' + (z - a).toFixed(4) + ')"></span>';
+      }
       var origDot = o != null ? '<span class="dot orig-dot" style="left:' + pos(o) +
         '" title="Original draft, paragraph ' + (i + 1) + '"></span>' : '';
       var dot = '<span class="dot ' + cls + '" style="left:' + pos(v) +
@@ -292,15 +314,26 @@
 
   var started = false;
   function start(info) {
-    if (started) return;
+    var word = !!(info && typeof Office !== 'undefined' && info.host === Office.HostType.Word);
+    if (started) {
+      // Word reported in after the fallback started website mode: switch to Word mode.
+      if (word && !inWord) {
+        inWord = true;
+        $('source-card').hidden = true;
+        $('refresh').hidden = false;
+        refresh();
+      }
+      return;
+    }
     started = true;
-    inWord = !!(info && typeof Office !== 'undefined' && info.host === Office.HostType.Word);
+    inWord = word;
     init();
   }
 
   if (typeof Office !== 'undefined' && Office.onReady) {
     Office.onReady(start);
     // If Office.js never reports ready (blocked or offline), fall back to the website mode.
+    // A slow Word start still switches back to Word mode when onReady finally fires.
     setTimeout(function () { start(null); }, 3000);
   } else {
     start(null);

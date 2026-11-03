@@ -74,3 +74,26 @@ test('classify marks values in, near, or out of the band', () => {
   assert.equal(M.classify(null, p), 'none');
   assert.equal(M.classify(10, null), 'none');
 });
+
+test('sentences splits on question and exclamation marks followed by spaces', () => {
+  assert.deepEqual(M.sentences('Is it? Yes! It is. Done'), ['Is it?', 'Yes!', 'It is.', 'Done']);
+});
+
+test('sentences keeps decimals and abbreviations inside a sentence', () => {
+  assert.equal(M.sentences('Dr. Lee paid 3.5 dollars vs. Mr. Kim. Then left.').length, 2);
+});
+
+test('metrics.js avoids regex lookbehind, which older Safari cannot parse', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '../src/metrics.js'), 'utf8');
+  assert.ok(!/\(\?<[=!]/.test(src));
+});
+
+test('numbers-only and emoji-only text has no measurable words', () => {
+  assert.equal(M.analyzeParagraph('12345 678'), null);
+  assert.equal(M.analyzeParagraph('\u{1F600}\u{1F680}'), null);
+});
+
+test('personal voice band can reach 100 but values stay within 0 to 100', () => {
+  const p = M.buildProfile(['I think you and we agree.', 'We know you do.']);
+  assert.equal(p.personal.mean, 100);
+});
